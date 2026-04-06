@@ -1,7 +1,9 @@
+from os import truncate
 import analyzer
 from fastapi import FastAPI
 from analyzer.parser import parse_code
 from analyzer.llm_extractor import extract_logic
+import uvicorn
 
 app = FastAPI()
 
@@ -22,3 +24,5 @@ async def analyze_code(code:str):
         "timeline_steps": len(results.logic_timeline) if results else 0
     }
 
+if __name__ == "__main__":
+    uvicorn.run("main:app", reload=True)
