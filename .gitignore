@@ -1,2 +1,4 @@
 *venv
 *.env
+*./analyzer/__pycache__
+*.__pycache__
