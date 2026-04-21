@@ -1,13 +1,3 @@
-"""
-language_analyzer.py
-─────────────────────
-LLM-based analysis + trace simulation for non-Python languages.
-Used when the user submits JavaScript, TypeScript, Java, C++, Go, Rust, etc.
-
-For Python → use real_tracer.py (actual execution, zero hallucination).
-For everything else → LLM simulates execution (only option without runtimes).
-"""
-
 import os
 import json
 from typing import List, Optional, Dict, Any
@@ -16,7 +6,6 @@ from google import genai
 from google.genai import types
 
 
-# ── Supported language registry ────────────────────────────────────────────────
 
 SUPPORTED_LANGUAGES: Dict[str, Dict[str, str]] = {
     "python":     {"label": "Python",     "ext": ".py",   "comment": "#"},
@@ -36,8 +25,6 @@ EXTENSION_MAP: Dict[str, str] = {
     meta["ext"]: lang for lang, meta in SUPPORTED_LANGUAGES.items()
 }
 
-# ── Language detection ─────────────────────────────────────────────────────────
-
 def detect_language(source_code: str, file_name: Optional[str] = None) -> str:
     """
     Detect programming language. Priority:
@@ -50,49 +37,37 @@ def detect_language(source_code: str, file_name: Optional[str] = None) -> str:
             if file_name.lower().endswith(ext):
                 return lang
 
-    # Heuristic: check for language-distinctive patterns
     code = source_code.strip()
 
-    # Java
     if "public class " in code or "System.out.println" in code or "public static void main" in code:
         return "java"
 
-    # C++ (before C — more specific)
     if "#include <iostream>" in code or "std::" in code or "cout <<" in code:
         return "cpp"
 
-    # C
     if "#include <stdio.h>" in code or "printf(" in code or "int main(" in code and "#include" in code:
         return "c"
 
-    # Go
     if "package main" in code or "func main()" in code or 'fmt.Println' in code:
         return "go"
 
-    # Rust
     if "fn main()" in code or "println!(" in code or "let mut " in code:
         return "rust"
 
-    # TypeScript (before JS — more specific)
     if ": string" in code or ": number" in code or "interface " in code or ": boolean" in code:
         return "typescript"
 
-    # JavaScript
     if "const " in code or "let " in code or "function " in code or "=>" in code:
         return "javascript"
 
-    # Ruby
     if "def " in code and "end" in code and "puts " in code:
         return "ruby"
 
-    # Python heuristics
     if "def " in code or "import " in code or "print(" in code or "class " in code:
         return "python"
 
     return "python"  # default fallback
 
-
-# ── Pydantic models for LLM structured output ─────────────────────────────────
 
 class FunctionInfo(BaseModel):
     name: str
@@ -140,8 +115,6 @@ class SimulatedTrace(BaseModel):
     steps: List[SimulatedTraceStep] = Field(default_factory=list)
 
 
-# ── Schema helper ──────────────────────────────────────────────────────────────
-
 def _strip_additional_props(obj: Any) -> None:
     """Recursively remove 'additionalProperties' from Pydantic JSON schema for Gemini."""
     if isinstance(obj, dict):
@@ -158,8 +131,6 @@ def _get_schema(model_class):
     _strip_additional_props(schema)
     return schema
 
-
-# ── Analysis (replaces parser.py + llm_extractor.py for non-Python) ───────────
 
 def analyze_any_language(source_code: str, language: str) -> Optional[CodeInsights]:
     """
@@ -210,7 +181,6 @@ Rules:
         return None
 
 
-# ── Simulated trace for non-Python ────────────────────────────────────────────
 
 def simulate_trace(source_code: str, language: str, ast_metrics: dict) -> Optional[SimulatedTrace]:
     """
