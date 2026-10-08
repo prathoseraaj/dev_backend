@@ -14,7 +14,7 @@ from analyzer.language_analyzer import (
 )
 from dotenv import load_dotenv
 import uvicorn
-
+     
 load_dotenv()
 
 app = FastAPI(title="CodeKino API")
